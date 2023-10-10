@@ -1,0 +1,15 @@
+customer:
+  sapi:
+    host: "lwwwcustomerssapi.us-e2.cloudhub.io"
+    port: "80"
+  papi:
+    host: "lwwwcustomerspapi.us-e2.cloudhub.io"
+    port: "80"
+orders:
+  sapi:
+    host: "lwwworderssapi.us-e2.cloudhub.io"
+    port: "80"
+restaurants:
+  sapi:
+    host: "lwwwrestaurantssapi.us-e2.cloudhub.io"
+    port: "80"

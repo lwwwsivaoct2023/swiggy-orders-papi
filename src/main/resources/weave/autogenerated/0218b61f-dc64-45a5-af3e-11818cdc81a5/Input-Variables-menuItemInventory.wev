@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_0218b61f_dc64_45a5_af3e_11818cdc81a5_Input_Variables_menuItemInventory = Any
+

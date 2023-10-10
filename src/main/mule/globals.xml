@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<http:request-config name="CUSTOMER_SAPI_HTTP_REQUEST_CONFIGURATION" doc:name="HTTP Request configuration" doc:id="a7f8767e-5b6d-4889-b08b-3c8e57461b11" basePath="/api" >
+		<http:request-connection host="${customer.sapi.host}" port="${customer.sapi.port}" />
+	</http:request-config>
+	<global-property doc:name="Global Property" doc:id="a2bb5306-47d2-4b96-b650-bee47b06d91c" name="env" value="prod" />
+	<configuration-properties doc:name="Configuration properties" doc:id="0fc3fd9c-6a66-4e0c-9e40-96e73da2864e" file="swiggy-${env}.yaml" />
+	<http:request-config name="ORDERS_SAPI_HTTP_REQUEST" doc:name="HTTP Request configuration" doc:id="91385af2-7f19-4d05-b658-af6e5e536046" basePath="/api" responseTimeout="20000">
+		<http:request-connection host="${orders.sapi.host}" port="${orders.sapi.port}" />
+	</http:request-config>
+	<http:request-config name="RESTAURANTS_SAPI_HTTP_REQUEST" doc:name="HTTP Request configuration" doc:id="65cbaa64-b9da-42ba-ab56-0003fe8986c5" basePath="/api" >
+		<http:request-connection host="${restaurants.sapi.host}" port="${restaurants.sapi.port}" />
+	</http:request-config>
+	<http:request-config name="CUSTOMER_PAPI_HTTP_REQUEST_CONFIGURATION" doc:name="HTTP Request configuration" doc:id="b280dd43-24ec-4808-8b35-d31963666bf6" basePath="/api" responseTimeout="20000">
+		<http:request-connection host="${customer.papi.host}" port="${customer.papi.port}" />
+	</http:request-config>
+</mule>

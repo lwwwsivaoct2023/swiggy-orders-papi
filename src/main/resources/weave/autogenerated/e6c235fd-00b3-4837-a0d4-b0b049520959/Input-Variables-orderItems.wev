@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_e6c235fd_00b3_4837_a0d4_b0b049520959_Input_Variables_orderItems = Array<Nothing>
+

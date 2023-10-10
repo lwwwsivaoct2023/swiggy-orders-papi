@@ -1,0 +1,26 @@
+%dw 2.0
+
+type auto_e6c235fd_00b3_4837_a0d4_b0b049520959_Output_Payload = {
+  orderDetails: {
+    orderId: String, 
+    deliveryAddress: String, 
+    totalPrice: Number, 
+    restaurant: {
+      restaurantAddress: String, 
+      restaurantName: String, 
+      _?: Any
+    }, 
+    orderStatus: String, 
+    orderItems: Array<{      itemName: String,       quantity: Number,       price: Number,       _?: Any    }>, 
+    customer: {
+      phone: String, 
+      name: String, 
+      email: String, 
+      _?: Any
+    }, 
+    _?: Any
+  }, 
+  orderStatusMessage: String, 
+  _?: Any
+}
+

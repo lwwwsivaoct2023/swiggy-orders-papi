@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<flow name="GetRestaurantDetailsById" doc:id="78f3d613-829a-47d4-855f-62788f35f745" >
+		<http:request method="GET" doc:name="Request" doc:id="6824106a-c022-4e6f-8074-0023129fdeae" config-ref="RESTAURANTS_SAPI_HTTP_REQUEST" path="/restaurants/{id}">
+			<http:uri-params ><![CDATA[#[{
+	id: vars.restaurantId
+}]]]></http:uri-params>
+		</http:request>
+	</flow>
+	<flow name="GetCustomerDetailsById" doc:id="d0882c51-6074-4e05-980c-f9015646b2ba" >
+		<http:request method="GET" doc:name="Request" doc:id="88405477-ca42-45a9-a361-0556f3dc5af5" config-ref="CUSTOMER_PAPI_HTTP_REQUEST_CONFIGURATION" path="/customers/{id}">
+			<http:uri-params ><![CDATA[#[{
+	id: vars.customerId
+}]]]></http:uri-params>
+		</http:request>
+	</flow>
+	<flow name="GetMenuItem" doc:id="0218b61f-dc64-45a5-af3e-11818cdc81a5" >
+		<http:request method="GET" doc:name="Request" doc:id="5b1705a6-e7e8-4301-a104-3746e62a35b7" config-ref="RESTAURANTS_SAPI_HTTP_REQUEST" path="/restaurants/{id}/menus/{menuId}/menuItems/{menuItemId}">
+			<http:uri-params ><![CDATA[#[{
+	id: payload.restaurantId,
+	menuId: payload.menuId,
+	menuItemId: payload.menuItemId
+}]]]></http:uri-params>
+		</http:request>
+	</flow>
+	<flow name="GetInventoryOfMenuItem" doc:id="d1830fad-4c6c-4833-aac1-0e6d5ebd4936" >
+		<http:request method="GET" doc:name="Request" doc:id="92375a77-0dfe-4928-a322-d6ac49ebea97" config-ref="RESTAURANTS_SAPI_HTTP_REQUEST" path="/restaurants/{id}/menus/{menuId}/menuItems/{menuItemId}/inventory">
+			<ee:repeatable-file-store-stream bufferUnit="MB" />
+			<http:uri-params ><![CDATA[#[{
+	id: payload.restaurantId,
+	menuId: payload.menuId,
+	menuItemId: payload.menuItemId
+}]]]></http:uri-params>
+		</http:request>
+	</flow>
+	<flow name="CheckInventoryForOrderItemAndAddPrice" doc:id="fd96943f-c511-4ac5-ac4c-b14c7491baea" >
+		<flow-ref doc:name="GetInventoryOfMenuItem" doc:id="a7c3b588-b055-4885-b3ff-95736f3d2901" name="GetInventoryOfMenuItem" target="menuItemInventory"/>
+		<choice doc:name="Choice" doc:id="5e7b74f6-7fde-4e6d-bc51-b3d97180977e" >
+			<when expression="#[vars.menuItemInventory.quantity &lt; payload.quantity]">
+				<raise-error doc:name="Raise error" doc:id="9774d862-f49a-4f39-9708-f797a55fb954" type="APP:INSUFFICIENT_QUANTITYFOR_ORDERITEM" description="Quantity insufficient"/>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="fd2f27c7-a884-4264-a2aa-78f7fc0b6989" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload ++ 
+{discountPercentage: vars.menuItemInventory.discountPercentage}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="CalculateOrderItemPriceAfterDiscount" doc:id="e6c235fd-00b3-4837-a0d4-b0b049520959" >
+		<ee:transform doc:name="CalculateOrderItemPrice" doc:id="bb71e67d-2bf1-4a87-8f89-ee3bebaf3d22" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="orderItems" ><![CDATA[%dw 2.0
+output application/java
+---
+payload.orderItems map (orderItem)-> {
+	  "menuId": orderItem.menuId,
+      "menuItemId": orderItem.menuItemId,
+      itemName: orderItem.itemName,
+      "restaurantId": orderItem.restaurantId,
+      "quantity": orderItem.quantity,
+      "orderItemPrice": orderItem.price*(100-orderItem.discountPercentage)/100 
+      
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="Add OrderItems to payload" doc:id="f9171205-b882-4e3c-bcd1-ccfc13d3f1f9" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload- 'orderItems' ++ {
+	orderItems: vars.orderItems
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="CreateOrder" doc:id="1fea6716-59c0-4c74-a0d8-bcb6659d036b" >
+		<ee:transform doc:name="Set Customerid RestaurantId and OrderItem Variables" doc:id="ccdf9830-10c6-4aef-a705-75dc3656c299">
+			<ee:message />
+			<ee:variables>
+				<ee:set-variable variableName="restaurantId"><![CDATA[%dw 2.0
+output application/java
+---
+payload.restaurantId]]></ee:set-variable>
+				<ee:set-variable variableName="orderItems"><![CDATA[%dw 2.0
+output application/java
+---
+payload.orderItems]]></ee:set-variable>
+				<ee:set-variable variableName="customerId" ><![CDATA[%dw 2.0
+output application/java
+---
+payload.customerId]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="ValidateIfAllOrdersBelongToSameRestaurant" doc:id="7379925d-bde4-4235-81a7-98d059c06a40" name="ValidateIfAllOrdersBelongToSameRestaurant"/>
+		<set-variable value="#[[]]" doc:name="Set Variable" doc:id="5c46fc49-a054-4bcb-938b-9d76f79b4cd1" variableName="orderItems"/>
+		<foreach doc:name="For Each Order Item Check Inventory" doc:id="05d6458d-b776-4a6f-a633-429e5cc66bc1" collection="#[payload.orderItems as Array]">
+			<flow-ref doc:name="CheckInventoryForOrderItemAndAddPrice" doc:id="633632ec-6b37-4b5a-9a00-9e0bb76a3724" name="CheckInventoryForOrderItemAndAddPrice"/>
+			<flow-ref doc:name="GetMenuItem" doc:id="31bc5011-8b37-4754-9086-62b089c5670d" name="GetMenuItem" target="menuItem"/>
+			<ee:transform doc:name="Add MenuItem Name and Price to OrderItem" doc:id="1080f0ec-ccec-4318-ad11-2a131323fdb2" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/dw
+---
+payload ++ {itemName:vars.menuItem.itemName,price: vars.menuItem.price}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<ee:transform doc:name="Transform Message" doc:id="6290edb4-2263-4c10-afe7-d1e0f0800211" >
+				<ee:message >
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="orderItems" ><![CDATA[%dw 2.0
+output application/java
+---
+vars.orderItems + payload]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</foreach>
+		<ee:transform doc:name="Add Modified OrderItems to Payload" doc:id="24778e8b-dc02-4d6b-b2f7-9c19315e3e10" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/dw
+---
+payload - "orderItems" ++{
+	orderItems: vars.orderItems
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<flow-ref doc:name="CalculateOrderItemPriceAfterDiscount" doc:id="fc369efa-cb10-4493-b4d8-a008976f5821" name="CalculateOrderItemPriceAfterDiscount"/>
+		<ee:transform doc:name="Add Additional Fields To Order" doc:id="c83fe25c-7bed-4eef-ae66-e8aec36f2de8" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload ++ {
+	orderStatus: "COMPLETED",
+	orderTime: now() as String {format: "yyyy-MM-dd"},
+	orderTotalPrice: payload.orderItems 
+				reduce (orderItem,accumulator=0)->
+				accumulator + (orderItem.quantity *orderItem.orderItemPrice)
+	//sum(payload.orderItems.quantity * payload.orderItems.orderItemPrice)
+	
+	}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Request To OrdersSAPI to create Order" doc:id="120a583c-110c-49cd-972d-445edabecead" config-ref="ORDERS_SAPI_HTTP_REQUEST" path="/orders"/>
+		<flow-ref doc:name="PrepareResponseForCreateOrder" doc:id="6a42dbf8-f24b-4e25-be69-cf2ce4366642" name="PrepareResponseForCreateOrder"/>
+		<logger level="INFO" doc:name="Logger" doc:id="8c14c047-3524-4380-bc5b-64ecd4302f81" message="#[payload]"/>
+	</flow>
+	<flow name="PrepareResponseForCreateOrder" doc:id="c541ac05-c486-4698-ac0b-03b357cbd98d" >
+		<flow-ref doc:name="GetCustomerDetailsById" doc:id="842d41ca-0ccc-45f5-afa5-7bb9f002fa18" name="GetCustomerDetailsById" target="customer" />
+		<flow-ref doc:name="GetRestaurantDetailsById" doc:id="58593049-b65b-4472-9a55-df596fc61ca8" name="GetRestaurantDetailsById" target="restaurant" />
+		<ee:transform doc:name="Create Final Response" doc:id="3e09ece4-9fa1-484e-a083-cfc2b38983a2" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+      
+{
+  orderStatusMessage: "Order Created Successfully!!",
+  orderDetails: {
+    orderId: payload.orderId,
+    deliveryAddress: vars.customer.addresses[0],
+    totalPrice: payload.orderTotalPrice,
+    orderStatus: payload.orderStatus,
+    orderItems: payload.orderItems map (orderItem)->
+      {
+        itemName: orderItem.itemName,
+        quantity: orderItem.quantity,
+        price: orderItem.orderItemPrice
+      }
+    ,
+    customer: {
+      name: vars.customer.fullName,
+      email: vars.customer.email,
+      phone: vars.customer.phone
+    },
+    restaurant: {
+      restaurantName: vars.restaurant.name,
+      restaurantAddress: vars.restaurant.address.houseNumber ++ "," ++
+      						vars.restaurant.address.street ++ "," ++
+      						vars.restaurant.address.city ++ "," ++
+      						vars.restaurant.address.pincode
+    }
+  }
+}
+
+    ]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="ValidateIfAllOrdersBelongToSameRestaurant" doc:id="bf3da3b7-72e8-4f26-b146-c86ac3d76435" >
+		<foreach doc:name="For Each" doc:id="54a93d56-ed64-446f-8c51-5639cd9b01a6" collection="#[vars.orderItems as Array]">
+			<choice doc:name="Choice" doc:id="047d7033-6eba-4664-9217-b384955d06a4" >
+				<when expression="#[payload.restaurantId != vars.restaurantId]">
+					<raise-error doc:name="Raise error" doc:id="a27f3090-7fcf-42ff-9f92-b298f0d27199" type="APP:INVALID_ORDER" description="All OrderItems in Order doesnot belong to Same Restaurant!!"/>
+				</when>
+				<otherwise >
+					<logger level="INFO" doc:name="Logger" doc:id="e312c5f7-6cc5-4534-820b-2b31fb724c49" message="This orderItem is Valid"/>
+				</otherwise>
+			</choice>
+		</foreach>
+	</flow>
+</mule>

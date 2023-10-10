@@ -1,0 +1,16 @@
+customer:
+  sapi:
+    host: "localhost"
+    port: "8081"
+  papi:
+    host: "localhost"
+    port: "8084"
+  
+orders:
+  sapi:
+    host: "localhost"
+    port: "8082"
+restaurants:
+  sapi:
+    host: "localhost"
+    port: "8083"

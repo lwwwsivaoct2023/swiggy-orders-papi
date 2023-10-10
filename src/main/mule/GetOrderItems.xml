@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="GetOrderItemById" doc:id="1515b7ea-a5bf-46ce-b68e-801403d803d2" >
+		<http:request method="GET" doc:name="Request" doc:id="94611e6d-3337-43f1-b9d0-04902466afb2" config-ref="ORDERS_SAPI_HTTP_REQUEST" path="/orders/{orderId}/orderItems">
+			<http:uri-params ><![CDATA[#[{
+	orderId: vars.id
+}]]]></http:uri-params>
+		</http:request>
+		<ee:transform doc:name="Transform Message" doc:id="29b73593-980b-418b-9018-d8377924fec3" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map (orderItem)-> {
+	
+  "itemName": lookup("GetMenuItem",{
+	restaurantId: orderItem.restaurantId,
+	menuId: orderItem.menuId,
+	menuItemId: orderItem.menuItemId
+},10000).itemName,
+  "quantity": orderItem.quantity,
+  "price": orderItem.orderItemPrice
+
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

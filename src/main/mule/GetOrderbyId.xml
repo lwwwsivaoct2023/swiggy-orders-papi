@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="GetOrderbyId" doc:id="bfa5eb9e-10bc-4759-95b0-1f86d57b2a84" >
+		<http:request method="GET" doc:name="Request" doc:id="1db9a1d8-61e8-4573-b4b2-283ffff70877" config-ref="ORDERS_SAPI_HTTP_REQUEST" path="/orders/{orderId}">
+			<http:uri-params ><![CDATA[#[{
+	orderId: vars.id
+}]]]></http:uri-params>
+		</http:request>
+	</flow>
+	<flow name="PrepareOrderResponseForGetOrderById" doc:id="c44b7e9e-cee7-4647-ab18-efc936bfa7e9" >
+		<flow-ref doc:name="GetOrderbyId" doc:id="1812cd6a-0439-477f-b4ec-c9fe7f2e95ee" name="GetOrderbyId"/>
+		<ee:transform doc:name="Set restaurantId and CustomerId" doc:id="50e3bfae-fbf3-4c0f-9f04-230962e703e7" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="customerId" ><![CDATA[%dw 2.0
+output application/java
+---
+payload.customerId]]></ee:set-variable>
+				<ee:set-variable variableName="restaurantId" ><![CDATA[%dw 2.0
+output application/java
+---
+payload.restaurantId]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="GetCustomerDetailsById" doc:id="13af7665-1297-449e-a63f-bb4d84fc88d0" name="GetCustomerDetailsById" target="customer"/>
+		<flow-ref doc:name="GetRestaurantDetailsById" doc:id="fa16b9e7-dedc-4cc9-9d5d-43149faffec5" name="GetRestaurantDetailsById" target="restaurant"/>
+		<ee:transform doc:name="Create Final Response" doc:id="f1b18cdc-a2d7-4120-8839-abb955c2a704" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+      
+{
+  
+  orderDetails: {
+    orderId: payload.orderId,
+    deliveryAddress: vars.customer.addresses[0],
+    totalPrice: payload.orderTotalPrice,
+    orderStatus: payload.orderStatus,
+    orderItems: payload.orderItems map (orderItem)->
+      {
+        itemName: lookup("GetMenuItem",{restaurantId: orderItem.restaurantId,
+										menuId: orderItem.menuId,
+										menuItemId: orderItem.menuItemId
+									},10000).itemName,
+        quantity: orderItem.quantity,
+        price: orderItem.orderItemPrice
+      }
+    ,
+    customer: {
+      name: vars.customer.fullName,
+      email: vars.customer.email,
+      phone: vars.customer.phone
+    },
+    restaurant: {
+      restaurantName: vars.restaurant.name,
+      restaurantAddress: vars.restaurant.address.houseNumber ++ "," ++
+      						vars.restaurant.address.street ++ "," ++
+      						vars.restaurant.address.city ++ "," ++
+      						vars.restaurant.address.pincode
+    }
+  }
+}
+
+    ]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_c44b7e9e_cee7_4647_ab18_efc936bfa7e9_Output_Variables_customer = Any
+

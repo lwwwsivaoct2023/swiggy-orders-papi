@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_78f3d613_829a_47d4_855f_62788f35f745_Output_Variables_restaurant = Any
+

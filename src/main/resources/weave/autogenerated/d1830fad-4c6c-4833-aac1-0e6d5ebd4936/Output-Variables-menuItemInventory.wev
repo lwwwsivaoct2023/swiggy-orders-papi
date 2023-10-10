@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_d1830fad_4c6c_4833_aac1_0e6d5ebd4936_Output_Variables_menuItemInventory = Any
+

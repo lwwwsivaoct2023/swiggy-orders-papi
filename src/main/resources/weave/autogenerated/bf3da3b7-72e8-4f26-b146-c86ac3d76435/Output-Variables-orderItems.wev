@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_bf3da3b7_72e8_4f26_b146_c86ac3d76435_Output_Variables_orderItems = Any
+
