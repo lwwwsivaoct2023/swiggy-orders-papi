@@ -11,6 +11,11 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 	id: vars.restaurantId
 }]]]></http:uri-params>
 		</http:request>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="c14b80d7-0bb2-44ee-af35-30abb72deae1" >
+				<raise-error doc:name="Raise error" doc:id="6c345f8b-5262-461d-9cdb-f0d13d4ff1ad" type="APP:DOESNOT_EXIST" description="Restaurant  Doesn't exist" />
+			</on-error-propagate>
+		</error-handler>
 	</flow>
 	<flow name="GetCustomerDetailsById" doc:id="d0882c51-6074-4e05-980c-f9015646b2ba" >
 		<http:request method="GET" doc:name="Request" doc:id="88405477-ca42-45a9-a361-0556f3dc5af5" config-ref="CUSTOMER_PAPI_HTTP_REQUEST_CONFIGURATION" path="/customers/{id}">
@@ -18,6 +23,11 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 	id: vars.customerId
 }]]]></http:uri-params>
 		</http:request>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="448d07aa-dcc6-461b-92cf-d3ff0700e5cc" >
+				<raise-error doc:name="Raise error" doc:id="1e9e10c6-ceed-4e2c-b7a4-32bf7276520a" type="APP:DOESNOT_EXIST" description="Customer  Doesn't exist . Please Check the Order details correctly" />
+			</on-error-propagate>
+		</error-handler>
 	</flow>
 	<flow name="GetMenuItem" doc:id="0218b61f-dc64-45a5-af3e-11818cdc81a5" >
 		<http:request method="GET" doc:name="Request" doc:id="5b1705a6-e7e8-4301-a104-3746e62a35b7" config-ref="RESTAURANTS_SAPI_HTTP_REQUEST" path="/restaurants/{id}/menus/{menuId}/menuItems/{menuItemId}">
@@ -27,6 +37,11 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 	menuItemId: payload.menuItemId
 }]]]></http:uri-params>
 		</http:request>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="9659e612-3c45-4dd3-aae2-89172e0269eb" >
+				<raise-error doc:name="Raise error" doc:id="77df081d-c702-4648-8274-9b42edba3e80" type="APP:DOESNOT_EXIST" description="Menu Item Doesn't exist. . Please Check the Order details correctly" />
+			</on-error-propagate>
+		</error-handler>
 	</flow>
 	<flow name="GetInventoryOfMenuItem" doc:id="d1830fad-4c6c-4833-aac1-0e6d5ebd4936" >
 		<http:request method="GET" doc:name="Request" doc:id="92375a77-0dfe-4928-a322-d6ac49ebea97" config-ref="RESTAURANTS_SAPI_HTTP_REQUEST" path="/restaurants/{id}/menus/{menuId}/menuItems/{menuItemId}/inventory">
@@ -37,12 +52,17 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 	menuItemId: payload.menuItemId
 }]]]></http:uri-params>
 		</http:request>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d8595138-3dd9-4eb5-9b0d-520dffbc3a4d" >
+				<raise-error doc:name="Raise error" doc:id="b9341d98-ce2f-4536-a85a-0534a95f51fd" type="APP:DOESNOT_EXIST" description="Inventory for Menu Item Inventory Doesn't exist . . Please Check the Order details correctly"/>
+			</on-error-propagate>
+		</error-handler>
 	</flow>
 	<flow name="CheckInventoryForOrderItemAndAddPrice" doc:id="fd96943f-c511-4ac5-ac4c-b14c7491baea" >
 		<flow-ref doc:name="GetInventoryOfMenuItem" doc:id="a7c3b588-b055-4885-b3ff-95736f3d2901" name="GetInventoryOfMenuItem" target="menuItemInventory"/>
 		<choice doc:name="Choice" doc:id="5e7b74f6-7fde-4e6d-bc51-b3d97180977e" >
 			<when expression="#[vars.menuItemInventory.quantity &lt; payload.quantity]">
-				<raise-error doc:name="Raise error" doc:id="9774d862-f49a-4f39-9708-f797a55fb954" type="APP:INSUFFICIENT_QUANTITYFOR_ORDERITEM" description="Quantity insufficient"/>
+				<raise-error doc:name="Raise error" doc:id="9774d862-f49a-4f39-9708-f797a55fb954" type="APP:INSUFFICIENT_QUANTITYFOR_ORDERITEM" description="Quantity insufficient for Order Item"/>
 			</when>
 			<otherwise >
 				<ee:transform doc:name="Transform Message" doc:id="fd2f27c7-a884-4264-a2aa-78f7fc0b6989" >

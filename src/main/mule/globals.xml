@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
-	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
-http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
 	<http:request-config name="CUSTOMER_SAPI_HTTP_REQUEST_CONFIGURATION" doc:name="HTTP Request configuration" doc:id="a7f8767e-5b6d-4889-b08b-3c8e57461b11" basePath="/api" >
 		<http:request-connection host="${customer.sapi.host}" port="${customer.sapi.port}" />
 	</http:request-config>
@@ -18,4 +19,52 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 	<http:request-config name="CUSTOMER_PAPI_HTTP_REQUEST_CONFIGURATION" doc:name="HTTP Request configuration" doc:id="b280dd43-24ec-4808-8b35-d31963666bf6" basePath="/api" responseTimeout="20000">
 		<http:request-connection host="${customer.papi.host}" port="${customer.papi.port}" />
 	</http:request-config>
+	<configuration doc:name="Configuration" doc:id="308cc416-3db6-4a35-9bda-ed1a44a08e29" defaultErrorHandler-ref="globalsError_Handler" />
+	<error-handler name="globalsError_Handler" doc:id="043548a9-b180-43bb-906f-077ccda88f73" >
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="31e7be83-248d-40de-b3ec-26e8413fcde0" type="APP:DOESNOT_EXIST" >
+			<ee:transform doc:name="Transform Message" doc:id="14dd593c-60b7-4880-82ca-106e55a66226" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+
+"status": "404",
+
+"message": error.description
+
+}]]></ee:set-payload>
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="httpStatus" ><![CDATA[%dw 2.0
+output application/java
+---
+"404"]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate1" doc:id="26801405-b438-47ef-8fe9-447ac2878519" type="APP:INSUFFICIENT_QUANTITYFOR_ORDERITEM , APP:INVALID_ORDER">
+			<ee:transform doc:name="Transform Message" doc:id="b1b8cf03-3bc3-406e-b476-1db9d99573f4" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+
+"status": "500",
+
+"message": error.description
+
+}]]></ee:set-payload>
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="httpStatus" ><![CDATA[%dw 2.0
+output application/java
+---
+"500"]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="c8e4eb18-b7f2-4993-a235-500bac0abf83" />
+	</error-handler>
 </mule>
